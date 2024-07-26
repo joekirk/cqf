@@ -29,7 +29,7 @@ This report is prepared to satisfy the requirements of the CQF assignment \texti
 
 \para
 The first investigation uses Geometric Brownian Motion as an example to introduce Monte Carlo methods and variance reduction techniques. 
-Specifically we study the effect of antithetic variates, sobol sequences and the brownian bridge to reduce the number of paths required to converge on the Black Scholes 
+Specifically we study the effect of antithetic variates, sobol sequences and the Brownian Bridge to reduce the number of paths required to converge on the Black Scholes 
 price of a European Call Option.
 
 \para
@@ -44,7 +44,7 @@ we fit the minimum variance delta (MVD) model. This model anticipates the change
 \subsection{Code}
 
 The Python code used to generate the data and plots has been provided alongside this report. Core functionality has been coded as reusable modules and the experiments
-are available as Jupyter notebooks. There are more details in the README of the code package.  External packages used are
+are available as Jupyter notebooks. There are more details in the README of the code package.  External packages used are:
 
 \begin{itemize}
     \item numpy / pandas - SIMD vectorized operations and data manipulation
@@ -64,10 +64,10 @@ where many financial models do not have closed form solutions. While European op
 products such as American options, that can be exercised at any point, require a numerical approach. 
 
 \para
-To price an option using Monte Carlo methods we must compute the fair value of said option. This is the present value of the expected payoff at expiry under a risk-neutral random walk. 
+To price an option using Monte Carlo methods, we must compute the fair value of said option. This is the present value of the expected payoff at expiry under a risk-neutral random walk. 
 
 \begin{enumerate}
-    \item Simulate the risk-neutral random walk starting at today's value of the asset S0 over the required time horizon. This gives one realization of the underlying price path.
+    \item Simulate the risk-neutral random walk starting at today's value of the asset, $S_0$, over the required time horizon. This gives one realization of the underlying price path.
     \item For this realization calculate the option payoff.
     \item Perform many more such realizations over the time horizon.
     \item Calculate the average payoff over all realizations.
@@ -88,9 +88,9 @@ The analytical solution for GBM is given by
 S(t) = S(0) \exp \left( \left( r - \frac{\sigma^2}{2} \right) t + \sigma W(t) \right)
 \]
 
-It is possible to generate the asset price at time $T$ using a single step. Since we wish to investigate variance reduction techniques 
+It is possible to generate the asset price at time $T$ using a single step. Since we wish to investigate variance reduction techniques ,
 we opt to focus our investigation on the numerical solutions discussed in the following section (Euler Maruyama and Milstein). These numerical methods
-require the full path to be simulated. Monte carlo simulations using the analytical solution have been provided in the code.
+require the full path to be simulated. Monte Carlo simulations using the analytical solution that have been provided in the code.
 
 \subsection{Numerical Solutions}
 
@@ -116,14 +116,14 @@ S_{t_{n+1}} = S_{t_n} + \mu S_{t_n} \Delta t + \sigma S_{t_n} \Delta W_n
 
 \subsubsection{The Milstein Scheme}
 
-The Milstein scheme improves upon the Euler-Maruyama method by adding a correction term involving the derivative of the diffusion coefficient. 
-The discretized form of the SDE using the Milstein scheme is given by:
+The Milstein Scheme improves upon the Euler-Maruyama method by adding a correction term involving the derivative of the diffusion coefficient. 
+The discretized form of the SDE using the Milstein Scheme is given by:
 
 \[
 X_{t_{n+1}} = X_{t_n} + a(X_{t_n}, t_n) \Delta t + b(X_{t_n}, t_n) \Delta W_n + \frac{1}{2} b(X_{t_n}, t_n) \frac{\partial b(X_{t_n}, t_n)}{\partial X} \left( (\Delta W_n)^2 - \Delta t \right)
 \]
 
-For GBM, the derivative of the diffusion term $b(S_t, t) = \sigma S_t$ with respect to $S_t$ is $\frac{\partial b(S_t, t)}{\partial S} = \sigma$. Using the Milstein scheme, the discretized form is:
+For GBM, the derivative of the diffusion term $b(S_t, t) = \sigma S_t$ with respect to $S_t$ is $\frac{\partial b(S_t, t)}{\partial S} = \sigma$. Using the Milstein Scheme, the discretized form is:
 
 \[
 S_{t_{n+1}} = S_{t_n} + \mu S_{t_n} \Delta t + \sigma S_{t_n} \Delta W_n + \frac{1}{2} S_{t_n} \sigma^2 \left( (\Delta W_n)^2 - \Delta t \right)
@@ -132,12 +132,12 @@ S_{t_{n+1}} = S_{t_n} + \mu S_{t_n} \Delta t + \sigma S_{t_n} \Delta W_n + \frac
 \newpage
 \subsection{Variance Reduction Techniques}
 
-The accuracy of a Monte Carlo simulation is measured by the standard error $\sigma / \sqrt{N}$. To improve the accuracy of a simulation we can increase the number 
+The accuracy of a Monte Carlo simulation is measured by the standard error $\sigma / \sqrt{N}$. To improve the accuracy of a simulation, we can increase the number 
 of random paths $N$ or reduce the standard deviation $\sigma$. Variance reduction techniques aim to reduce the standard error by reducing the variance of the simulated paths.
 
 \subsubsection{Antithetic Variates}
 
-Antithetic variates leverage the fact that for every gaussian drawn there is a corresponding negative variate which 
+Antithetic Variates leverage the fact that for every gaussian drawn, there is a corresponding negative variate which 
 has the same probability of being drawn. If we draw variate $v_i = v(z_i)$ then we also use $v_i' = v(-z_i)$. $v_i'$ 
 is negatively correlated to $v_i$ but has the same variance.\cite{jackel}
 
@@ -153,10 +153,10 @@ Because $v_i$ and $v_i'$ are negatively correlated, $\text{Cov}(v_i, v_i') < 0$.
 
 \subsubsection{Sobol Sequences}
 
-Sobol sequences are a type of low-discrepancy sequence used in numerical methods for generating quasi-random points. 
-Unlike purely random sequences, which can have clusters and gaps, quasi-random sequences like Sobol sequences are designed 
-to fill the space more evenly. This results in more reliable and faster convergence in numerical simulations. We illustrate 
-the difference between random numbers and sobol sequences in Figure \ref{fig:sobol}.
+Sobol Sequences are a type of low-discrepancy sequence used in numerical methods for generating quasi-random points. 
+Unlike purely random sequences, which can have clusters and gaps, quasi-random sequences like Sobol Sequences are designed 
+to fill the space more evenly. This results in more reliable and faster convergence in numerical simulations. The difference between
+random numbers and Sobol Sequences is demonstrated in Figure \ref{fig:sobol}.
 
 \begin{figure}[ht]
     \centering
@@ -190,13 +190,13 @@ W(t_i) = (1 - \gamma)(W(t_l)) + \gamma W(t_m) + \sqrt{\gamma(1-\gamma)(m-l)\Delt
 \]
 
 \para
-Incremental and Brownian Bridge path constructions have the same variance so we'd expect a similar rate of convergence. We show in our
-results that the Brownian Bridge combined with a Sobol sequence has superior convergence rate. It was suggested by Markowitz\cite{markowitz} 
-that the improvement in convergence is due to reduction of the effective dimension of the problem.
+Incremental and Brownian Bridge path constructions have the same variance so a similar rate of convergence is expected. The results show that 
+the Brownian Bridge combined with a Sobol Sequence has a superior convergence rate. It was suggested by Markowitz\cite{markowitz} 
+that the improvement in convergence is due to the reduction of the effective dimension of the problem.
 
 \subsection{Results}
 
-In this section we present the results of pricing a European Call Option using the Euler approximation with the following variance reduction / path construction techniques
+In this section, we present the results of pricing a European Call Option using the Euler approximation with the following variance reduction / path construction techniques
 
 \begin{itemize}
     \item Antithetic Variates
@@ -208,8 +208,8 @@ In this section we present the results of pricing a European Call Option using t
 We replicate the workings of Sergei Kucherenko and Nishant Shah \cite{sergei} and use
 the following parameters for the simulation: $S_0 = 100$, $K = 100$, $r = 0.05$, $\sigma = 0.2$, $T = 0.5$.
 The Black-Scholes price of the option is 6.89.  128 steps are computed and the number of simulations
-is varied from 2 to 256.  As expected there is little difference in the convergence rates of incremental and brownian bridge path 
-construction in the absence of variance reduction techniques. If we combine the Sobol sequence with the Brownian Bridge we see 
+is varied from 2 to 256.  As expected, there is little difference in the convergence rates of incremental and Brownian Bridge path 
+construction in the absence of variance reduction techniques. If we combine the Sobol Sequence with the Brownian Bridge, we see 
 a significant improvement in convergence rate. Figure \ref{fig:option_price} shows the evolution of the price estimate price as the number
 simulations is increased.
 
@@ -228,8 +228,8 @@ RMSE = \sqrt{\frac{1}{L} \sum_{l=1}^{L} (V^l - V^{BS})^2}
 \]
 
 RMSE is plotted against the number of simulations in Figure \ref{fig:rmse}. When variance reduction techniques are
-applied the accuracy of the results is significantly improved reducing the number of simulations needed to achieve
-a desired level of accuracy.  According to the simulations the convergence rate of the Brownian Bridge with Sobol sequences
+applied, the accuracy of the results is significantly improved by reducing the number of simulations needed to achieve
+a desired level of accuracy.  According to the simulations, the convergence rate of the Brownian Bridge with Sobol Sequences
 decreases as $1/N^{0.95}$.
 
 \begin{figure}[h]
@@ -244,7 +244,7 @@ decreases as $1/N^{0.95}$.
 
 \section{Hedging with actual or implied volatility}
 
-In this section we study the differences between hedging a portfolio of options with implied and actual volatility.  The figures that follow have been created by 
+In this section, the differences between hedging a portfolio of options with implied and actual volatility are studied.  The figures that follow have been created by 
 studying the P\&L of a long option, short stock portfolio. The stock price is assumed to follow Geometric Brownian Motion and is generated using
 the Milstein approximation using Sobol / Brownian Bridge variance reduction. It has initial price $S_0 = 100$. The option is a European Call with strike $K = 100$, risk free rate $r = 0.02$.
 Actual volatility is taken to be $\sigma_a = 0.35$ and implied volatility $\sigma_i = 0.2$. The time to maturity is $T = 1$ and the number of steps to produce the stock path is $256$.
@@ -255,16 +255,16 @@ Much of the following analysis is taken from CQF lecture notes and Quantitative 
 
 \subsection{Actual volatility}
 
-By hedging with actual volatility we are replicating a short position in a correctly priced option. The payoffs for the long option and the short replicated option will
+By hedging with actual volatility, we are replicating a short position in a correctly priced option. The payoffs for the long option and the short replicated option will
 exactly cancel.  The total profit from hedging with actual volatility is known and can be calculated as the difference between the actual and implied option price
 
 \[
 V(S, t; \sigma^a) - V(S, t; \sigma^i)
 \]
 
-To prove this setup a long option short stock portfolio. The option is valued at $V^i$, and we hedge with $-\Delta^a S$ of the stock.
-The portfolio is left for a short time period $\delta_t$ and revalued.  In the notation superscript $a$ refers to actual
-and superscript $i$ refers to implied.  Dividends are ignored for brevity, but it is a small extension.
+To prove this, set up a long option short stock portfolio. The option is valued at $V^i$, and we hedge with $-\Delta^a S$ of the stock.
+The portfolio is left for a short time period $\delta_t$ and revalued.  In the notation, superscript $a$ refers to actual
+and, superscript $i$ refers to implied.  Dividends are ignored for brevity, but it is a small extension.
 
 \para
 'Today' at time $t$
@@ -313,14 +313,14 @@ Mark to market we have made the following profit over one time step
     \label{tab:eq1}
 \end{equation}
 \end{center}
-If the option is priced using the actual volatility then the option is correctly valued at $V^a$ so we can write
+If the option is priced using the actual volatility then the option is correctly valued at $V^a$, so it is written
 \begin{center}
 \begin{equation}
     dV^a - \Delta^a dS -(V^a - \Delta^a S) rdt = 0 
     \label{tab:eq2}
 \end{equation}
 \end{center}
-Subtracting \ref{tab:eq1} from \ref{tab:eq2} we can rewrite the mark-to-market profit from $t$ to $t + \delta_t$ as
+Subtracting \ref{tab:eq1} from \ref{tab:eq2} the mark-to-market profit from $t$ to $t + \delta_t$
 
 \begin{center}
 \begin{align*}
@@ -384,12 +384,12 @@ The profit of a single timestep can also be written as
 \end{center}
 
 
-Figure \ref{fig:actual_volatility_hedging} illustrates how the theoretical P\&L ($V^a - V^i = 5.85$) can be realised. A couple of points to note.
+Figure \ref{fig:actual_volatility_hedging} illustrates how the theoretical P\&L ($V^a - V^i = 5.85$) can be realised. A couple of points to note:
 
 \begin{itemize}
-    \item Daily profit is random. This is accounted for by the $dX$ term
-    \item On a mark-to-market it is possible to lose money in spite of the theoretical profit being known
-    \item The final P\&L is not exactly the same as the theoretical profit because we hedge discreetly
+    \item Daily profit is random. This is accounted for by the $dX$ term.
+    \item On a mark-to-market it is possible to lose money in spite of the theoretical profit being known.
+    \item The final P\&L is not exactly the same as the theoretical profit because we hedge discreetly.
 \end{itemize}
 
  
@@ -402,10 +402,13 @@ Figure \ref{fig:actual_volatility_hedging} illustrates how the theoretical P\&L 
 
 \subsection{Implied volatility}
 
-Hedging with implied volatility is a more common practice since the daily profit is deterministic. We balance the fluctuations in stock price with those in the option price.
+Hedging with implied volatility is a more common practice since the daily profit is deterministic. The fluctuations in stock price with those in the option price are balanced.
 
 \para
-Consider the same portfolio as before, but we hedge with $-\Delta^i S$ rather than $-\Delta^a S$. The mark-to-market profit over one time step is
+Consider the same portfolio as before, but hedge with $-\Delta^i S$ rather than $-\Delta^a S$. 
+
+\para
+The mark-to-market profit over one time step is
 
 \begin{center}
 \begin{align*}
@@ -415,7 +418,7 @@ Consider the same portfolio as before, but we hedge with $-\Delta^i S$ rather th
 \end{align*}
 \end{center}
 
-Adding up the profit over all time steps and discount to present day value we obtain the total P\&L.
+Adding up the profit over all time steps and discount to the present day value, the total P\&L is obtained.
 
 \[
     \frac{1}{2}(\sigma_a^2 - \sigma_i^2) \int_{t_0}^{T} e^{-r(t-t_0)} S^2 \Gamma^i dt
@@ -431,13 +434,13 @@ Hedging with implied volatility has the following characteristics
 \end{figure}
 
 \begin{itemize}
-    \item The daily profit is deterministic - there are no $dX$ terms
-    \item The total profit is unknown, positive and highly path dependent 
-    \item Small fluctuations in the P\&L are caused by discrete hedging
+    \item The daily profit is deterministic - there are no $dX$ terms.
+    \item The total profit is unknown, positive and highly path dependent.
+    \item Small fluctuations in the P\&L are caused by discrete hedging.
 \end{itemize}
 
-These characteristics are visible in Figure \ref{fig:implied_volatility_hedging}. The P\&L distribution in figure \ref{fig:pnl_distribution} illustrates the 
-different payoff profiles when we hedge with actual and implied volatility. 
+These characteristics are visible in Figure \ref{fig:implied_volatility_hedging}. The P\&L distribution in Figure \ref{fig:pnl_distribution} illustrates the 
+different payoff profiles.
 
 \begin{figure}[h]
     \centering
@@ -446,17 +449,17 @@ different payoff profiles when we hedge with actual and implied volatility.
     \label{fig:pnl_distribution}
 \end{figure}
 
-P\&L scales with $\Gamma_i$ (which is strictly positive for Call options). We wouldn't expect to make much money in a trending market (large positive or negative drift)
-where the Delta races to 1 or 0. The best we can hope for is for the spot to be close to the strike at expiration causing Gamma to spike. That said the relationship isn't 
+P\&L scales with $\Gamma_i$ (which is strictly positive for Call options). It's not expected to make much money in a trending market (large positive or negative drift)
+where the Delta races to 1 or 0. The best outcome is for the spot to be close to the strike at expiration causing Gamma to spike. That said, the relationship isn't 
 particularly straightforward. Daily PNL is approximated by 
 
 \[
     \frac{1}{2}\Gamma_i S^2 ((\frac{\Delta S}{S})^2 - \sigma_i^2 dt)
 \]
 
-In Figure \ref{fig:gamma} we show how the daily P\&L (smoothed over 5 days) evolves with the time dependent Gamma as the stock price nose dives.
+In Figure \ref{fig:gamma} the daily P\&L (smoothed over 5 days) evolves with the time-dependent Gamma as the stock price nose dives.
 In the plot, negative daily P\&L is seen in conjunction with an increase in Gamma suggesting that there is a corresponding decrease in the local realised volatility. If 
-the realised volatility is lower than the implied volatility then realised P\&L will be negative over the timestep. 
+the realised volatility is lower than the implied volatility, then realised P\&L will be negative over the timestep. 
 
 
 \begin{figure}[h]
@@ -472,7 +475,7 @@ the realised volatility is lower than the implied volatility then realised P\&L 
 
 \section{Minimum Variance Delta}
 
-In this third and final section of the report we study Minimum Variance Delta (MVD). MVD is the Delta that minimizes the variance of a hedgers positions.
+In this third and final section of the report Minimum Variance Delta (MVD) is studied. MVD is the Delta that minimizes the variance of a hedgers positions
 by anticipating the change in the magnitude of implied volatility. A correction is then applied to the Black-Scholes Delta. 
 A regression model for computing MVD was introduced by John C. Hull and Alan White in 2017 \cite{hull}. In their paper it is shown that 
 
@@ -497,29 +500,29 @@ Delta and Vega respectively.
 
 \subsection{Data}
 
-We use end of day SPX options data from OptionsDX. The data contains; bid, ask, strike, days to expiry, implied volatility, delta, gamma, theta, vega. It is assumed
+End of day SPX options data from OptionsDX is used. The data contains; bid, ask, strike, days to expiry, implied volatility, delta, gamma, theta, vega. It is assumed
 that the greeks are calculated using the Black-Scholes model. The mid price is calculated and used as the option price for all analysis. The vega quoted is the 1\% 
-change in implied volatility, so it is scaled up by 100.  The paper suggests that approach is most effective for out of the money options so the data has been restricted to
-three moneyness levels; 50\%, 40\% and 30\%. The regression is also run across different expiry horizons; 1M, 3M, 6M, 9M and 12M.  In spite of these filters the accompanying
-code can we run on the full dataset (e.g all moneyness levels, calls and puts, and all expiries).
+change in implied volatility, so it is scaled up by 100.  The paper suggests that this approach is most effective for out of the money options so the data has been restricted to
+three moneyness levels; 50\%, 40\% and 30\%. The regression is also run across different expiry horizons; 1M, 3M, 6M, 9M and 12M.  In spite of these, the accompanying
+code can be run on the full dataset (e.g all moneyness levels, calls and puts, and all expiries).
 
 \subsection{Results}
 
 The regression model is fitted to the data and the coefficients $a$, $b$ and $c$ are calculated.  Figure \ref{fig:a_b_c} illustrates how $a$, $b$ and $c$ evolve using a 15-day rolling window.
 Rolling estimation accounts for changing environments and can reflect regime changes, for example, the spike in March 2023 is likely caused by the Silicon Valley Bank crash.  The parameters are
 two orders of magnitude larger than those found by Hull and White. This is likely due to do the fact that S\&P levels are now 5 times higher than they were in 2014. Similar to Hull and White
-\cite{hull} we uncover that, for call options, $a$ and $b$ are mirror images.
+\cite{hull} it's uncovered that, for call options, $a$ and $b$ are mirror images.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{images/a_b_c.png}
-    \caption{Estimated parameters for a, b, and c for calls in 2023 in the 40 delta, 3M expiry bucket using a 15 day rolling window}
+    \caption{Estimated parameters for a, b, and c for calls in 2023 in the 40 delta, 3M expiry bucket using a 15-day rolling window}
     \label{fig:a_b_c}
 \end{figure}
 
-As expected we uncover that the Minimum Variance Delta is lower than Black-Scholes Delta in all the cases studied. In Figure \ref{fig:mvd-bs} we show that
+As expected, it's discovered that the Minimum Variance Delta is lower than Black-Scholes Delta in all the cases studied. In Figure \ref{fig:mvd-bs} it's shown that
 $\delta_{MV}$ - $\delta_{BS}$ gives a parabolic shape (inverted for longer dated options). This suggests the quadratic fitting recipe is a good approximation.
-We similarly plot the expected change in implied volatility in Figure \ref{fig:eiv} against Delta which similarly shows a parabolic shape.
+The expected change in implied volatility in Figure \ref{fig:eiv} against Delta shows a similarly parabolic shape.
 
 \begin{figure}[h]
     \centering
@@ -538,11 +541,11 @@ We similarly plot the expected change in implied volatility in Figure \ref{fig:e
 
 
 Sum of square errors (SSE) quantifies how well the regression model fits the data. 
-Specifically, it measures the total deviation of the predicted values from the actual values. A higher SSE indicates a worse fit as we
-deviate further from the actual values. 
+Specifically, it measures the total deviation of the predicted values from the actual values. A higher SSE indicates a worse fit as it
+deviates further from the actual values. 
 
 \para
-The Gain is the measure of improvement of the model. We compare the SSE hedging error for Black-Scholes Delta and Minimum Variance Delta. The hedging
+The SSE hedging error for Black-Scholes Delta and Minimum Variance Delta is compared. The hedging
 error for Minimum Variance Delta is 
 
 \[
@@ -555,14 +558,14 @@ and the hedging error for Black-Scholes Delta is
 \epsilon_{MV} = \Delta f - \delta_{BS} \Delta S
 \]
 
-The gain is therefore 
+The gain (the model improvement) is therefore 
 
 \[
 Gain = 1 - \frac{SSE(\epsilon_{MV})}{SSE(\epsilon_{BS})}
 \]
 
-In Table \ref{tab:gain} we show the gain in model accuracy for different moneyness levels and expiries. It further confirms that the Minimum Variance Delta model
-is superior to the Black-Scholes Delta model reporting gains in all cases. We also confirm that better performance for out of the money options seeing a gain of
+In Table \ref{tab:gain} the gain in model accuracy is shown for different moneyness levels and expiries. It further confirms that the Minimum Variance Delta model
+is superior to the Black-Scholes Delta model reporting gains in all cases. It also confirms that better performance for out of the money options seeing a gain of
 18.4\% for 50\% moneyness options with 1M expiry.
 
 \begin{table}[ht]
