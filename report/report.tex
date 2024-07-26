@@ -464,10 +464,9 @@ the realised volatility is lower than the implied volatility, then realised P\&L
 
 \begin{figure}[h]
     \centering
-    \subfigure[Caption for Figure 1]{\includegraphics[width=0.45\textwidth]{images/stock_vs_gamma.png}}
+    \subfigure[Evolution of Gamma with stock price]{\includegraphics[width=0.45\textwidth]{images/stock_vs_gamma.png}}
     \hfill
-    \subfigure[Caption for Figure 2]{\includegraphics[width=0.45\textwidth]{images/gamma_pnl.png}}
-    \caption{Caption for the combined figure}
+    \subfigure[Daily profit and loss compared to Gamma]{\includegraphics[width=0.45\textwidth]{images/gamma_pnl.png}}
     \label{fig:gamma}
 \end{figure}
  
@@ -549,7 +548,7 @@ The SSE hedging error for Black-Scholes Delta and Minimum Variance Delta is comp
 error for Minimum Variance Delta is 
 
 \[
-\epsilon_{MV} = \Delta f - \delta_{BS} \Delta S - lta S = \frac{v_{BS}}{\sqrt{T}} \frac{\Delta S}{S} (a + b \delta_{BS} + c \delta_{BS}^2)
+\epsilon_{MV} = \Delta f - \delta_{BS} \Delta S - \frac{v_{BS}}{\sqrt{T}} \frac{\Delta S}{S} (a + b \delta_{BS} + c \delta_{BS}^2)
 \]
 
 and the hedging error for Black-Scholes Delta is
@@ -565,7 +564,7 @@ Gain = 1 - \frac{SSE(\epsilon_{MV})}{SSE(\epsilon_{BS})}
 \]
 
 In Table \ref{tab:gain} the gain in model accuracy is shown for different moneyness levels and expiries. It further confirms that the Minimum Variance Delta model
-is superior to the Black-Scholes Delta model reporting gains in all cases. It also confirms that better performance for out of the money options seeing a gain of
+is superior to the Black-Scholes Delta model, reporting gains in all cases. It also confirms that better performance for out of the money options seeing a gain of
 18.4\% for 50\% moneyness options with 1M expiry.
 
 \begin{table}[ht]
@@ -583,6 +582,7 @@ is superior to the Black-Scholes Delta model reporting gains in all cases. It al
     \end{tabular}
 \end{table}
 
+\newpage
 
 \begin{thebibliography}{9}
 \bibitem{hull}
