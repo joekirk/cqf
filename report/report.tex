@@ -44,9 +44,16 @@ we fit the minimum variance delta (MVD) model. This model anticipates the change
 \subsection{Code}
 
 The Python code used to generate the data and plots has been provided alongside this report. Core functionality has been coded as reusable modules and the experiments
-are available as Jupyter notebooks. Jupyter has been used because it is easy to generate plots.
+are available as Jupyter notebooks. There are more details in the README of the code package.  External packages used are
 
-TODO: Add a table detailing the functions have been implemented
+\begin{itemize}
+    \item numpy / pandas - SIMD vectorized operations and data manipulation
+    \item scikit-learn - Linear regression
+    \item matplotlib - Plot generation for reports
+    \item scipy - Normal distribution and Sobol sequences
+\end{itemize}
+
+All other methods have been implemented from scratch. The scientific libraries are so commonly used that they are considered part of the standard library in Python.
 
 \newpage
 
@@ -119,7 +126,7 @@ X_{t_{n+1}} = X_{t_n} + a(X_{t_n}, t_n) \Delta t + b(X_{t_n}, t_n) \Delta W_n + 
 For GBM, the derivative of the diffusion term $b(S_t, t) = \sigma S_t$ with respect to $S_t$ is $\frac{\partial b(S_t, t)}{\partial S} = \sigma$. Using the Milstein scheme, the discretized form is:
 
 \[
-S_{t_{n+1}} = S_{t_n} + \mu S_{t_n} \Delta t + \sigma S_{t_n} \Delta W_n + \frac{1}{2} \sigma S_{t_n} \sigma \left( (\Delta W_n)^2 - \Delta t \right)
+S_{t_{n+1}} = S_{t_n} + \mu S_{t_n} \Delta t + \sigma S_{t_n} \Delta W_n + \frac{1}{2} S_{t_n} \sigma^2 \left( (\Delta W_n)^2 - \Delta t \right)
 \]
 
 \newpage
@@ -318,7 +325,7 @@ Subtracting \ref{tab:eq1} from \ref{tab:eq2} we can rewrite the mark-to-market p
 \begin{center}
 \begin{align*}
     \ref{tab:eq1} - \ref{tab:eq2} & = dV^i - dV^a + r(V^a - \Delta^a S) dt - r (V^i - \Delta^a S) dt \\[2pt]
-                                  & = dV^i - dV^a + r(V^i - V^a) dt \\[2pt]
+                                  & = dV^i - dV^a - r(V^i - V^a) dt \\[2pt]
                                   & = e^{rt} d(e^{-rt} (V^i - V^a)) \\[2pt]
     d(e^{-rt}V)                   & = d(e^{-rt} dV) -r e^{-rt} V dt \\[2pt]
                                   & = e^{-rt} (dV -rV dt) \\
@@ -466,24 +473,113 @@ the realised volatility is lower than the implied volatility then realised P\&L 
 \section{Minimum Variance Delta}
 
 In this third and final section of the report we study Minimum Variance Delta (MVD). MVD is the Delta that minimizes the variance of a hedgers positions.
-by anticipating the change in the magnitude of implied volatility. A correction is then applied to the Black-Scholes delta. 
-A regression model for computing MVD was introduced by John C. Hull and Alan White in 2017 \cite{hull}.
+by anticipating the change in the magnitude of implied volatility. A correction is then applied to the Black-Scholes Delta. 
+A regression model for computing MVD was introduced by John C. Hull and Alan White in 2017 \cite{hull}. In their paper it is shown that 
+
+\[
+\delta_{MV} = \delta_{BS} + \frac{v_{BS}}{S \sqrt{T}} (a + b \delta_{BS} + c \delta_{BS}^2)
+\]
+
+and the expected change in implied volatility is given by
+
+\[
+E(\Delta \sigma_i) = \left ( \frac{a + b \delta_{BS} + c \delta_{BS}^2}{\sqrt{T}} \right ) \frac{\Delta S}{S}
+\]
+
+To determine the coefficients $a$, $b$ and $c$ the following regression model is used
+
+\[
+\Delta f - \delta_{bs} \Delta S = \frac{v_{BS}}{\sqrt{T}} \frac{\Delta S}{S} (a + b \delta_{BS} + c \delta_{BS}^2) + \epsilon
+\]
+
+$\Delta f$ is the change in the option price, $\Delta S$ is the change in the stock price and $\epsilon$ is the error term. $\delta_{BS}$ and $v_{BS}$ are the Black-Scholes 
+Delta and Vega respectively.    
+
+\subsection{Data}
+
+We use end of day SPX options data from OptionsDX. The data contains; bid, ask, strike, days to expiry, implied volatility, delta, gamma, theta, vega. It is assumed
+that the greeks are calculated using the Black-Scholes model. The mid price is calculated and used as the option price for all analysis. The vega quoted is the 1\% 
+change in implied volatility, so it is scaled up by 100.  The paper suggests that approach is most effective for out of the money options so the data has been restricted to
+three moneyness levels; 50\%, 40\% and 30\%. The regression is also run across different expiry horizons; 1M, 3M, 6M, 9M and 12M.  In spite of these filters the accompanying
+code can we run on the full dataset (e.g all moneyness levels, calls and puts, and all expiries).
+
+\subsection{Results}
+
+The regression model is fitted to the data and the coefficients $a$, $b$ and $c$ are calculated.  Figure \ref{fig:a_b_c} illustrates how $a$, $b$ and $c$ evolve using a 15-day rolling window.
+Rolling estimation accounts for changing environments and can reflect regime changes, for example, the spike in March 2023 is likely caused by the Silicon Valley Bank crash.  The parameters are
+two orders of magnitude larger than those found by Hull and White. This is likely due to do the fact that S\&P levels are now 5 times higher than they were in 2014. Similar to Hull and White
+\cite{hull} we uncover that, for call options, $a$ and $b$ are mirror images.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/a_b_c.png}
+    \caption{Estimated parameters for a, b, and c for calls in 2023 in the 40 delta, 3M expiry bucket using a 15 day rolling window}
+    \label{fig:a_b_c}
+\end{figure}
+
+As expected we uncover that the Minimum Variance Delta is lower than Black-Scholes Delta in all the cases studied. In Figure \ref{fig:mvd-bs} we show that
+$\delta_{MV}$ - $\delta_{BS}$ gives a parabolic shape (inverted for longer dated options). This suggests the quadratic fitting recipe is a good approximation.
+We similarly plot the expected change in implied volatility in Figure \ref{fig:eiv} against Delta which similarly shows a parabolic shape.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/mvd-bs.png}
+    \caption{Delta MVD - Delta BS for the 30, 40 and 50 Delta buckets for 1M, 3M, 6M, 9M and 12M tenors}
+    \label{fig:mvd-bs}
+\end{figure}
 
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/eiv.png}
+    \caption{Expected change in implied volatility for the 30, 40 and 50 Delta buckets for 1M, 3M, 6M, 9M and 12M tenors}
+    \label{fig:eiv}
+\end{figure}
 
-\subsection*{Data}
 
-We use SPX options data from OptionsDX. The data is for the 2023 expiry and is used to fit the MVD model. The data is as follows
+Sum of square errors (SSE) quantifies how well the regression model fits the data. 
+Specifically, it measures the total deviation of the predicted values from the actual values. A higher SSE indicates a worse fit as we
+deviate further from the actual values. 
 
+\para
+The Gain is the measure of improvement of the model. We compare the SSE hedging error for Black-Scholes Delta and Minimum Variance Delta. The hedging
+error for Minimum Variance Delta is 
 
-In this final section we study 
-TODO - tomorrow 
+\[
+\epsilon_{MV} = \Delta f - \delta_{BS} \Delta S - lta S = \frac{v_{BS}}{\sqrt{T}} \frac{\Delta S}{S} (a + b \delta_{BS} + c \delta_{BS}^2)
+\]
 
-Tues: introduce the MVD model / paper summary. Understand the delta changes 
-Weds: Results of MVD
+and the hedging error for Black-Scholes Delta is
 
-i) 
-ii) 
+\[
+\epsilon_{MV} = \Delta f - \delta_{BS} \Delta S
+\]
+
+The gain is therefore 
+
+\[
+Gain = 1 - \frac{SSE(\epsilon_{MV})}{SSE(\epsilon_{BS})}
+\]
+
+In Table \ref{tab:gain} we show the gain in model accuracy for different moneyness levels and expiries. It further confirms that the Minimum Variance Delta model
+is superior to the Black-Scholes Delta model reporting gains in all cases. We also confirm that better performance for out of the money options seeing a gain of
+18.4\% for 50\% moneyness options with 1M expiry.
+
+\begin{table}[ht]
+    \centering
+    \caption{Gain in model accuracy}
+    \label{tab:gain}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+         &1M & 3M & 6M & 9M & 12M \\
+        \hline
+        50\% &  8.7 &  5.7 &  3.9 &  3.8 & 1.8 \\
+        40\% & 13.3 & 11.6 &  7.2 &  5.4 & 3.8 \\
+        30\% & 18.4 & 21.5 & 13.9 & 10.5 & 8.4 \\
+        \hline
+    \end{tabular}
+\end{table}
+
 
 \begin{thebibliography}{9}
 \bibitem{hull}
