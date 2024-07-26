@@ -5,6 +5,7 @@
 \usepackage{graphicx} % For including images
 \usepackage{hyperref} % For hyperlinks
 \usepackage{float}
+\usepackage{subfigure}
 
 \newcommand{\para}{\vspace{8pt}} % New paragraph command
 
@@ -183,7 +184,7 @@ W(t_i) = (1 - \gamma)(W(t_l)) + \gamma W(t_m) + \sqrt{\gamma(1-\gamma)(m-l)\Delt
 
 \para
 Incremental and Brownian Bridge path constructions have the same variance so we'd expect a similar rate of convergence. We show in our
-results that the Brownian Bridge combined with a Sobol sequence has superior convergence rate. It was suggested my Markowitz\cite{markowitz} 
+results that the Brownian Bridge combined with a Sobol sequence has superior convergence rate. It was suggested by Markowitz\cite{markowitz} 
 that the improvement in convergence is due to reduction of the effective dimension of the problem.
 
 \subsection{Results}
@@ -219,7 +220,7 @@ We also look at the root mean square error (RMSE). Each simulation is run $L=50$
 RMSE = \sqrt{\frac{1}{L} \sum_{l=1}^{L} (V^l - V^{BS})^2}
 \]
 
-The RMSE is plotted against the number of simulations in Figure \ref{fig:rmse}. When variance reduction techniques are
+RMSE is plotted against the number of simulations in Figure \ref{fig:rmse}. When variance reduction techniques are
 applied the accuracy of the results is significantly improved reducing the number of simulations needed to achieve
 a desired level of accuracy.  According to the simulations the convergence rate of the Brownian Bridge with Sobol sequences
 decreases as $1/N^{0.95}$.
@@ -232,14 +233,30 @@ decreases as $1/N^{0.95}$.
 \end{figure}
 
 \newpage
+\newpage
 
-\section{Hedging with actual volatility}
+\section{Hedging with actual or implied volatility}
+
+In this section we study the differences between hedging a portfolio of options with implied and actual volatility.  The figures that follow have been created by 
+studying the P\&L of a long option, short stock portfolio. The stock price is assumed to follow Geometric Brownian Motion and is generated using
+the Milstein approximation using Sobol / Brownian Bridge variance reduction. It has initial price $S_0 = 100$. The option is a European Call with strike $K = 100$, risk free rate $r = 0.02$.
+Actual volatility is taken to be $\sigma_a = 0.35$ and implied volatility $\sigma_i = 0.2$. The time to maturity is $T = 1$ and the number of steps to produce the stock path is $256$.
+If the option is hedged with the actual volatility it has a theoretical P\&L of \$5.85
+
+\para
+Much of the following analysis is taken from CQF lecture notes and Quantitative Finance books authored by Wilmott \cite{wilmott}.
+
+\subsection{Actual volatility}
 
 By hedging with actual volatility we are replicating a short position in a correctly priced option. The payoffs for the long option and the short replicated option will
-exactly cancel.
+exactly cancel.  The total profit from hedging with actual volatility is known and can be calculated as the difference between the actual and implied option price
 
-Set up a long option and a short stock portfolio. The option is valued at $V^i$, and we hedge with $-\Delta^a S$ of the stock.
-The portfolio is left for a short time period $\delta_t$ and revalued.  In the following notation superscript $a$ refers to actual
+\[
+V(S, t; \sigma^a) - V(S, t; \sigma^i)
+\]
+
+To prove this setup a long option short stock portfolio. The option is valued at $V^i$, and we hedge with $-\Delta^a S$ of the stock.
+The portfolio is left for a short time period $\delta_t$ and revalued.  In the notation superscript $a$ refers to actual
 and superscript $i$ refers to implied.  Dividends are ignored for brevity, but it is a small extension.
 
 \para
@@ -270,18 +287,18 @@ and superscript $i$ refers to implied.  Dividends are ignored for brevity, but i
         \hline
         \textbf{Component} & \textbf{Value} \\
         \hline
-        Option & $V^{i}$ \\
+        Option & $V^{i} + dV^i$\\
         \hline
-        Stock & $-\Delta^{a}S$ \\
+        Stock & $-\Delta^{a}S -\Delta^{a}dS$ \\
         \hline
-        Cash & $-V^{i} + \Delta^{a}S$ \\
+        Cash & $(-V^{i} + \Delta^{a}S)(1 + r dt)$ \\
         \hline
     \end{tabular}
     \caption{Portfolio at time $t + \delta_{t}$}
     \label{tab:portfolio_t_plus_delta_t}
 \end{table}
 
-Marked to market we have made the following profit over one time step
+Mark to market we have made the following profit over one time step
 
 \begin{center}
 \begin{equation}
@@ -289,17 +306,13 @@ Marked to market we have made the following profit over one time step
     \label{tab:eq1}
 \end{equation}
 \end{center}
-
-
 If the option is priced using the actual volatility then the option is correctly valued at $V^a$ so we can write
-
 \begin{center}
 \begin{equation}
     dV^a - \Delta^a dS -(V^a - \Delta^a S) rdt = 0 
     \label{tab:eq2}
 \end{equation}
 \end{center}
-
 Subtracting \ref{tab:eq1} from \ref{tab:eq2} we can rewrite the mark-to-market profit from $t$ to $t + \delta_t$ as
 
 \begin{center}
@@ -315,11 +328,9 @@ Subtracting \ref{tab:eq1} from \ref{tab:eq2} we can rewrite the mark-to-market p
 
 The present value of this profit at $t_0$ is
 
-\begin{center}
-\begin{equation}
-    e^{-r(t-t_0)} e^{rt} d(e^{-rt} (V^i - V^a)) = e^{-rt_0} d(e^{-rt} (V^i - V^a dt))
-\end{equation}
-\end{center}
+\[
+    e^{-r(t-t_0)} e^{rt} d(e^{-rt} (V^i - V^a)) = e^{rt_0} d(e^{-rt} (V^i - V^a))
+\]
 
 So the total profit from $t_0$ to expiration is
 
@@ -330,12 +341,149 @@ So the total profit from $t_0$ to expiration is
 \end{center}
 
 
-\newpage
+The profit is guaranteed, but how is it realised? Using
+\para
 
-\section{Hedging with implied volatility}
+i) It\^{o}'s lemma 
+
+\[
+dV = (\frac{dV}{dt} + \frac{1}{2} \sigma_a^2 S^2 \frac{d^2V}{dS^2}) dt + \frac{dV}{dS} dS
+\]
+
+\para
+ii) Black-Scholes with $\sigma = \sigma_i$ and 
+
+\[
+\Theta^i + \frac{1}{2} \sigma_i^2 S^2 \Gamma^i + r (S \Delta^i - V^ii) = 0
+\]
+
+\para
+iii) Geometric Brownian Motion as the path for the underlying asset
+
+
+\[
+dS = \mu S dt + \sigma_a S dX
+\]
+
+The profit of a single timestep can also be written as
+
+\begin{center}
+\begin{align*}
+& \Theta^i dt + \Delta^i dS + \frac{1}{2} \sigma^2 S^2 \Gamma ^i dt - \Delta^a dS -r(V_i - \Delta^a S) dt\\[2pt]
+&= \Theta^i dt + \mu S(\Delta^i - \Delta^a) dt + \frac{1}{2} \sigma^2 S^2 \Gamma^i dt - r (V^i - V^a) dt + (\Delta^i - \Delta^a) \sigma S dX\\[2pt]
+&= (\Delta^i - \Delta^a) \sigma S dX + (\mu - r) S (\Delta^i - \Delta^a) dt + \frac{1}{2} (\sigma_a^2 - \sigma_i^2) S^2 \Gamma^i dt\\[2pt]
+&= \frac{1}{2}( \sigma_a^2 - \sigma_i^2) S^2 \Gamma^i dt + (\Delta^i - \Delta^a) ((\mu -r) S dt + \sigma_a S dX)
+\end{align*}
+\end{center}
+
+
+Figure \ref{fig:actual_volatility_hedging} illustrates how the theoretical P\&L ($V^a - V^i = 5.85$) can be realised. A couple of points to note.
+
+\begin{itemize}
+    \item Daily profit is random. This is accounted for by the $dX$ term
+    \item On a mark-to-market it is possible to lose money in spite of the theoretical profit being known
+    \item The final P\&L is not exactly the same as the theoretical profit because we hedge discreetly
+\end{itemize}
+
+ 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{images/actual_volatility_hedging.png}
+\caption{P\&L for a delta hedged option on a mark-to-market basis hedged with actual volatility}
+\label{fig:actual_volatility_hedging}
+\end{figure}
+
+\subsection{Implied volatility}
+
+Hedging with implied volatility is a more common practice since the daily profit is deterministic. We balance the fluctuations in stock price with those in the option price.
+
+\para
+Consider the same portfolio as before, but we hedge with $-\Delta^i S$ rather than $-\Delta^a S$. The mark-to-market profit over one time step is
+
+\begin{center}
+\begin{align*}
+& dV^i - \Delta^i dS -(V^i - \Delta^i S) rdt\\[2pt]
+&= \Theta^i dt + \frac{1}{2} \sigma_a^2 S^2 \Gamma^i dt - r(V^i - \Delta^i S) dt\\[2pt]
+&= \frac{1}{2}(\sigma_a^2 - \sigma_i^2) S^2 \Gamma^i dt
+\end{align*}
+\end{center}
+
+Adding up the profit over all time steps and discount to present day value we obtain the total P\&L.
+
+\[
+    \frac{1}{2}(\sigma_a^2 - \sigma_i^2) \int_{t_0}^{T} e^{-r(t-t_0)} S^2 \Gamma^i dt
+\]
+
+Hedging with implied volatility has the following characteristics 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/implied_volatility_hedging.png}
+    \caption{P\&L for a delta hedged option on a mark-to-market basis hedged with implied volatility}
+    \label{fig:implied_volatility_hedging}
+\end{figure}
+
+\begin{itemize}
+    \item The daily profit is deterministic - there are no $dX$ terms
+    \item The total profit is unknown, positive and highly path dependent 
+    \item Small fluctuations in the P\&L are caused by discrete hedging
+\end{itemize}
+
+These characteristics are visible in Figure \ref{fig:implied_volatility_hedging}. The P\&L distribution in figure \ref{fig:pnl_distribution} illustrates the 
+different payoff profiles when we hedge with actual and implied volatility. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/pnl_distribution.png}
+    \caption{P\&L distribution for a delta hedged option on a mark-to-market basis hedged with actual and implied volatility}
+    \label{fig:pnl_distribution}
+\end{figure}
+
+P\&L scales with $\Gamma_i$ (which is strictly positive for Call options). We wouldn't expect to make much money in a trending market (large positive or negative drift)
+where the Delta races to 1 or 0. The best we can hope for is for the spot to be close to the strike at expiration causing Gamma to spike. That said the relationship isn't 
+particularly straightforward. Daily PNL is approximated by 
+
+\[
+    \frac{1}{2}\Gamma_i S^2 ((\frac{\Delta S}{S})^2 - \sigma_i^2 dt)
+\]
+
+In Figure \ref{fig:gamma} we show how the daily P\&L (smoothed over 5 days) evolves with the time dependent Gamma as the stock price nose dives.
+In the plot, negative daily P\&L is seen in conjunction with an increase in Gamma suggesting that there is a corresponding decrease in the local realised volatility. If 
+the realised volatility is lower than the implied volatility then realised P\&L will be negative over the timestep. 
+
+
+\begin{figure}[h]
+    \centering
+    \subfigure[Caption for Figure 1]{\includegraphics[width=0.45\textwidth]{images/stock_vs_gamma.png}}
+    \hfill
+    \subfigure[Caption for Figure 2]{\includegraphics[width=0.45\textwidth]{images/gamma_pnl.png}}
+    \caption{Caption for the combined figure}
+    \label{fig:gamma}
+\end{figure}
+ 
+\newpage
 
 \section{Minimum Variance Delta}
 
+In this third and final section of the report we study Minimum Variance Delta (MVD). MVD is the Delta that minimizes the variance of a hedgers positions.
+by anticipating the change in the magnitude of implied volatility. A correction is then applied to the Black-Scholes delta. 
+A regression model for computing MVD was introduced by John C. Hull and Alan White in 2017 \cite{hull}.
+
+
+
+\subsection*{Data}
+
+We use SPX options data from OptionsDX. The data is for the 2023 expiry and is used to fit the MVD model. The data is as follows
+
+
+In this final section we study 
+TODO - tomorrow 
+
+Tues: introduce the MVD model / paper summary. Understand the delta changes 
+Weds: Results of MVD
+
+i) 
+ii) 
 
 \begin{thebibliography}{9}
 \bibitem{hull}
@@ -346,6 +494,8 @@ S. Kucherenko, N. Shah \textit{The Importance of being Global. Application of Gl
 P. J{\"a}ckel \textit{Monte Carlo Methods in Finance}.
 \bibitem{markowitz}
 B. Moskowitz, R.E. Caflisch. \textit{Smoothness and Dimension Reduction in Quasi-Monte-Carlo}
+\bibitem{wilmott}
+P. Wilmott. \textit{Paul Wilmott on Quantitative Finance. Volume 1.}
 \end{thebibliography}
 \end{document}
 

@@ -2,13 +2,11 @@ import numpy as np
 import pandas as pd
 
 from datetime import datetime as dt, timedelta
-
 from sklearn.linear_model import LinearRegression
 
-from src.data import get_spx_data, IV, TAU, UNDERLYING, STRIKE, MinMax, CallPut, EXPIRE_DATE, CALL_PUT, DELTA, VEGA, MID, QUOTE_DATE
-from src.black_scholes import  bs_call_price, bs_call_delta, bs_vega, CallPut
+from src.black_scholes import CallPut
+from src.data import get_spx_data, IV, TAU, UNDERLYING, STRIKE, MinMax, EXPIRE_DATE, CALL_PUT, DELTA, VEGA, MID, QUOTE_DATE
 
-from src.monte_carlo import GBMMonteCarloSimulation, VarianceReduction, NumericalScheme
 
 FACTOR = 'FACTOR'
 UNDERLYING_1 = 'UNDERLYING_1'
@@ -22,6 +20,8 @@ EIV = 'EIV'
 MVDBS = 'MVD-BS'
 Y_HAT = 'Y_HAT'
 Y='Y'
+ERROR_BS = 'ERROR_BS'
+ERROR_MV = 'ERROR_MV'
 
 
 def _make_X(data):
@@ -64,8 +64,8 @@ def _factor(vega, tau, s0, s1):
     return vega * (s1 - s0) / (s0 * np.sqrt(tau))
 
 
-def delta_mvd(a, b, c, S, delta_bs, vega, tau):
-    return delta_bs + (vega / (S * np.sqrt(tau)) * (a + (b * delta_bs) + (c * np.square(delta_bs))))
+def delta_mvd(a, b, c, s0, delta_bs, vega, tau):
+    return delta_bs + (vega / (s0 * np.sqrt(tau)) * (a + (b * delta_bs) + (c * np.square(delta_bs)))) 
 
 
 def expected_iv(a, b, c, delta_s, delta, tau):
@@ -80,6 +80,7 @@ def error_mv(a, b, c, delta_bs, vega, tau, s0, s1, f0, f1):
 
 def error_bs(f0, f1, s0, s1, delta_bs):
     _ebs = _y(f0, f1, s0, s1, delta_bs)
+    return _ebs
 
 
 class MinimumVarianceDelta:
@@ -104,97 +105,17 @@ class MinimumVarianceDelta:
         )
 
         self._data = self._prepare_data(spx_df)
-        # self._data = self.get_synthetic_data()
         self.X = _make_X(self._data)
         self.y = _make_y(self._data)
-
-    
-    def get_synthetic_data(self):
-
-        # start with just a call option for now with fixed expiry bucket
-        # delta bucket between 0.35 and 0.45
-        # this is just a test to try to understand the data
-        
-        sim = GBMMonteCarloSimulation(
-            S0 = 4000,
-            r = 0.05,
-            sigma = 0.2,
-            T = 1,
-            k = 8,
-            n_sims=1
-        )
-
-        # Generate the paths
-        path = sim.run_sim(
-            variance_reduction=VarianceReduction.SobolBrownianBridge, 
-            numerical_scheme=NumericalScheme.Euler
-        )[0]
-
-        # lets start really simple and assume the spot just walks town
-
-
-        tau = 1 / 12
-        r = 0.05
-        K = [x for x in range(3800, 4000, 5)]
-        options = []
-        underlying_price = 4000
-        for day, s in enumerate(path):
-            underlying_price *= 0.999
-            for strike in K:
-                iv = np.random.uniform(0, 0.25)
-                price = bs_call_price(s, strike, r, iv, tau)
-                delta = bs_call_delta(s, strike, r, iv, tau)
-                vega = bs_vega(s, strike, r, iv, tau)
-                options.append(
-                    (
-                        day,
-                        tau,
-                        underlying_price,
-                        delta,
-                        vega,
-                        price,
-                        strike,
-                        'C',
-                        iv
-                    )
-                )
-
-        df = pd.DataFrame(
-            options,
-            columns=[QUOTE_DATE, TAU, UNDERLYING, DELTA, VEGA, OPTION_PRICE, STRIKE, CALL_PUT, IV]
-        )
-        df[OPTION_PRICE_1] = df.groupby([STRIKE, CALL_PUT])[OPTION_PRICE].shift(-1)
-        df[UNDERLYING_1] = df.groupby([STRIKE, CALL_PUT])[UNDERLYING].shift(-1)
-        df[IV_1] = df.groupby([STRIKE, CALL_PUT])[IV].shift(-1)
-        df = df.dropna()
-
-        df[F] = df[OPTION_PRICE_1] - df[OPTION_PRICE]
-        df[S] = df[UNDERLYING_1] - df[UNDERLYING]
-
-        # need to filter by delta
-        df[FACTOR] = _factor(
-            df[VEGA], 
-            df[TAU], 
-            df[UNDERLYING], 
-            df[UNDERLYING_1]
-        )
-
-        df = df[(df.DELTA < 0.45) & (df.DELTA > 0.35)].copy()
-        return df
-
 
     @staticmethod
     def _prepare_data(spx_df):
         spx_df = spx_df.reset_index()
         
-        original = spx_df.copy()
-
         spx_df = spx_df.rename(columns={MID: OPTION_PRICE})
         spx_df[OPTION_PRICE_1] = spx_df.groupby([EXPIRE_DATE, STRIKE, CALL_PUT])[OPTION_PRICE].shift(-1)
         spx_df[UNDERLYING_1] = spx_df.groupby([EXPIRE_DATE, STRIKE, CALL_PUT])[UNDERLYING].shift(-1)
         spx_df[IV_1] = spx_df.groupby([EXPIRE_DATE, STRIKE, CALL_PUT])[IV].shift(-1)
-        
-        import pdb; pdb.set_trace()
         
         spx_df = spx_df.dropna()
 
@@ -239,11 +160,12 @@ class MinimumVarianceDelta:
             a=df['a'],
             b=df['b'],
             c=df['c'],
-            S=df[UNDERLYING],
+            s0=df[UNDERLYING],
             delta_bs=df[DELTA],
             vega=df[VEGA],
             tau=df[TAU]
         )
+
         df[Y] = _y(
             df[OPTION_PRICE], 
             df[OPTION_PRICE_1], 
@@ -251,6 +173,7 @@ class MinimumVarianceDelta:
             df[UNDERLYING_1], 
             df[DELTA]
         )
+
         df[Y_HAT] = _y_hat(
             a=df['a'],
             b=df['b'],
@@ -273,13 +196,34 @@ class MinimumVarianceDelta:
         
         df[MVDBS] = df[MVD_DELTA] - df[DELTA]
 
+        df[ERROR_BS] =  error_bs(
+            f0=df[OPTION_PRICE],
+            f1=df[OPTION_PRICE_1],
+            s0=df[UNDERLYING],
+            s1=df[UNDERLYING_1],
+            delta_bs=df[DELTA]
+        )
+
+        df[ERROR_MV] = error_mv(
+            a=df['a'],
+            b=df['b'],
+            c=df['c'],
+            delta_bs=df[DELTA],
+            vega=df[VEGA],
+            tau=df[TAU],
+            s0=df[UNDERLYING],
+            s1=df[UNDERLYING_1],
+            f0=df[OPTION_PRICE],
+            f1=df[OPTION_PRICE_1]
+        )
+
         if columns is not None:
             df = df[key + columns]
 
         return df
 
 
-    def fit(self, rolling_window_size=None):
+    def fit(self, rolling_window_size=None, fit_intercept=True):
         X = self.X
         y = self.y
 
@@ -288,14 +232,15 @@ class MinimumVarianceDelta:
         train_dt = X.index.unique()
 
         if rolling_window_size is None:
-            model = LinearRegression(fit_intercept=False)
+            model = LinearRegression(fit_intercept=fit_intercept)
             model.fit(X, y)
             coefficients.append(
                 (
                     train_dt[0],
                     model.coef_[0],
                     model.coef_[1],
-                    model.coef_[2]
+                    model.coef_[2],
+                    model.intercept_
                 )
             )
         else:
@@ -307,20 +252,21 @@ class MinimumVarianceDelta:
 
                 start = _dt
                 end = _dt + timedelta(days=rolling_window_size)
-                model = LinearRegression()
+                model = LinearRegression(fit_intercept=fit_intercept)
                 model.fit(X[start:end], y[start:end])
                 coefficients.append(
                     (
                         _dt,
                         model.coef_[0],
                         model.coef_[1],
-                        model.coef_[2]
+                        model.coef_[2],
+                        model.intercept_
                     )
                 )
 
         df = pd.DataFrame(
             coefficients, 
-            columns=['tstamp', 'a', 'b', 'c']
+            columns=['tstamp', 'a', 'b', 'c', 'eps']
         ).set_index('tstamp')
 
         df = df.reindex(train_dt, method='ffill')
@@ -328,6 +274,7 @@ class MinimumVarianceDelta:
 
 
 if __name__ == "__main__":
+    # Short period of example data
     start_date = dt(2023, 1, 1)
     end_date = dt(2023, 3, 31)
 
@@ -340,6 +287,11 @@ if __name__ == "__main__":
         start_date=start_date, 
         end_date=end_date
     )
+
+    # Fit the model
     coefficients = mvd.fit(rolling_window_size=None)
+
+    # Generate results dataframe for analysis
     results = mvd.results_df(coefficients)
+
     print(results)

@@ -1,7 +1,6 @@
 import pandas as pd
 import pkg_resources
 import functools
-import xml.etree.ElementTree as ET
 
 from typing import Optional
 
@@ -178,34 +177,6 @@ def get_spx_data(
     
     if delta is not None:
         df = df[(df[DELTA] >= delta.min) & (df[DELTA] <= delta.max)]
-
-    return df
-
-
-def sofr():
-    file = pkg_resources.resource_filename(__name__, '/resources/sofr_rates.xml')
-
-    tree = ET.parse(file)
-    rates = tree.getroot()
-
-    data = [
-        (
-            pd.Timestamp(rate.find('effectiveDate').text).date(),
-            rate.find('type').text,
-            float(rate.find('percentRate').text),
-            float(rate.find('percentPercentile1').text),
-            float(rate.find('percentPercentile25').text),
-            float(rate.find('percentPercentile75').text),
-            float(rate.find('percentPercentile99').text),
-        ) for rate in rates
-    ]
-
-    df = pd.DataFrame(
-        data=data,
-        columns=['effectiveDate', 'type', 'percentRate', 'percentPercentile1', 'percentPercentile25', 'percentPercentile75', 'percentPercentile99']
-    )
-    df = df.sort_values('effectiveDate')
-    df = df.reset_index(drop=True)
 
     return df
 
